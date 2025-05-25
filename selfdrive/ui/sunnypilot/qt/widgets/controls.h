@@ -409,6 +409,10 @@ public:
     }
   }
 
+  inline int getWidgetIndex(QWidget *widget) {
+    return inner_layout.indexOf(widget);
+  }
+
 private:
   void paintEvent(QPaintEvent *) override {
     QPainter p(this);
