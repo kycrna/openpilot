@@ -4,22 +4,21 @@ Copyright (c) 2021-, Haibin Wen, sunnypilot, and a number of other contributors.
 This file is part of sunnypilot and is licensed under the MIT License.
 See the LICENSE.md file in the root directory for more details.
 
-One-tap Always Offroad shortcut for the tici/tizi UI: a pill on the driving view to enter
+One-tap Always Offroad shortcut for the tici/tizi UI: a pill on the driving view (above the driver monitoring icon) to enter
 Always Offroad, and a pill on the home screen header to exit it.
 """
 import pyray as rl
+from openpilot.selfdrive.ui import UI_BORDER_SIZE
 from openpilot.selfdrive.ui.ui_state import ui_state
 from openpilot.system.ui.lib.application import gui_app, FontWeight
 from openpilot.system.ui.lib.multilang import tr
 from openpilot.system.ui.lib.text_measure import measure_text_cached
 from openpilot.system.ui.widgets.confirm_dialog import alert_dialog
 
-ONROAD_BTN_WIDTH = 240
-ONROAD_BTN_HEIGHT = 100
-ONROAD_BTN_TOP = 45
-ONROAD_BTN_RIGHT_MARGIN = 150  # keeps clear of the right blind spot indicator
-RIGHT_DEV_UI_WIDTH = 224
-FONT_SIZE = 40
+ONROAD_BTN_WIDTH = 300
+ONROAD_BTN_HEIGHT = 150
+ONROAD_BTN_GAP = 30  # space between the button and the driver monitoring icon below it
+FONT_SIZE = 56
 
 BG_COLOR = rl.Color(0, 0, 0, 166)
 BORDER_COLOR = rl.Color(255, 255, 255, 75)
@@ -35,12 +34,12 @@ def set_always_offroad(enable: bool) -> None:
 
 
 def onroad_button_rect(content_rect: rl.Rectangle) -> rl.Rectangle:
-  from openpilot.selfdrive.ui.sunnypilot.onroad.developer_ui import DeveloperUiState
-  right_offset = ONROAD_BTN_RIGHT_MARGIN
-  if ui_state.developer_ui in (DeveloperUiState.RIGHT, DeveloperUiState.BOTH):
-    right_offset += RIGHT_DEV_UI_WIDTH
-  return rl.Rectangle(content_rect.x + content_rect.width - right_offset - ONROAD_BTN_WIDTH,
-                      content_rect.y + ONROAD_BTN_TOP, ONROAD_BTN_WIDTH, ONROAD_BTN_HEIGHT)
+  """Bottom-left, stacked directly above the driver monitoring icon."""
+  from openpilot.selfdrive.ui.onroad.driver_state import BTN_SIZE as DM_BTN_SIZE
+  from openpilot.selfdrive.ui.sunnypilot.onroad.developer_ui import get_bottom_dev_ui_offset
+  dm_top = content_rect.y + content_rect.height - UI_BORDER_SIZE - DM_BTN_SIZE - get_bottom_dev_ui_offset()
+  return rl.Rectangle(content_rect.x + UI_BORDER_SIZE, dm_top - ONROAD_BTN_GAP - ONROAD_BTN_HEIGHT,
+                      ONROAD_BTN_WIDTH, ONROAD_BTN_HEIGHT)
 
 
 def _draw_text_centered(rect: rl.Rectangle, text: str, font_size: int) -> None:
