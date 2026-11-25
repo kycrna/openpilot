@@ -5,17 +5,36 @@ This file is part of sunnypilot and is licensed under the MIT License.
 See the LICENSE.md file in the root directory for more details.
 """
 import pyray as rl
-from openpilot.selfdrive.ui.layouts.home import HomeLayout, HomeLayoutState, HEAD_BUTTON_FONT_SIZE, SPACING
-from openpilot.system.ui.lib.application import gui_app, FontWeight, TextAlignment
+from openpilot.selfdrive.ui.layouts.home import HomeLayout, HomeLayoutState, HEAD_BUTTON_FONT_SIZE, HEADER_HEIGHT, SPACING
+from openpilot.selfdrive.ui.sunnypilot.offroad_toggle import draw_exit_button, set_always_offroad
+from openpilot.selfdrive.ui.ui_state import ui_state
+from openpilot.system.ui.lib.application import gui_app, FontWeight, MousePos, TextAlignment
 from openpilot.system.ui.lib.text_measure import measure_text_cached
 from openpilot.system.ui.lib.multilang import tr, trn
 from openpilot.system.ui.widgets.label import gui_label
 
 BRAND_FONT_SIZE = 48
 BRAND_DESC_SPACING = 12
+EXIT_OFFROAD_WIDTH = 300
 
 
 class HomeLayoutSP(HomeLayout):
+  def __init__(self):
+    super().__init__()
+    self.exit_offroad_rect = rl.Rectangle(0, 0, EXIT_OFFROAD_WIDTH, HEADER_HEIGHT - 10)
+
+  def _update_state(self):
+    super()._update_state()
+    x = self.header_rect.x + (220 if self.update_available else 0) + (240 if self.alert_count > 0 else 0)
+    self.exit_offroad_rect.x = x
+    self.exit_offroad_rect.y = self.header_rect.y + (self.header_rect.height - 60) // 2
+
+  def _handle_mouse_release(self, mouse_pos: MousePos):
+    if ui_state.always_offroad and rl.check_collision_point_rec(mouse_pos, self.exit_offroad_rect):
+      set_always_offroad(False)
+      return
+    super()._handle_mouse_release(mouse_pos)
+
   def _render_header(self):
     font = gui_app.font(FontWeight.MEDIUM)
 
@@ -45,7 +64,11 @@ class HomeLayoutSP(HomeLayout):
       text_y = self.alert_notif_rect.y + (self.alert_notif_rect.height - text_size.y) // 2
       rl.draw_text_ex(font, alert_text, rl.Vector2(int(text_x), int(text_y)), HEAD_BUTTON_FONT_SIZE, 0, rl.WHITE)
 
-    if self.update_available or self.alert_count > 0:
+    if ui_state.always_offroad:
+      version_text_width -= self.exit_offroad_rect.width + (SPACING if self.update_available or self.alert_count > 0 else 0)
+      draw_exit_button(self.exit_offroad_rect, HEAD_BUTTON_FONT_SIZE)
+
+    if self.update_available or self.alert_count > 0 or ui_state.always_offroad:
       version_text_width -= SPACING * 1.5
 
     version_right = self.header_rect.x + self.header_rect.width

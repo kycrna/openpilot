@@ -19,6 +19,7 @@ if gui_app.sunnypilot_ui():
   from openpilot.selfdrive.ui.sunnypilot.onroad.driver_state import DriverStateRendererSP as DriverStateRenderer
   from openpilot.selfdrive.ui.sunnypilot.onroad.hud_renderer import HudRendererSP as HudRenderer
   from openpilot.selfdrive.ui.sunnypilot.ui_state import OnroadTimerStatus
+  from openpilot.selfdrive.ui.sunnypilot import offroad_toggle
 
 OpState = log.SelfdriveState.OpenpilotState
 CALIBRATED = log.ExtrinsicsCalibration.Status.calibrated
@@ -96,6 +97,8 @@ class AugmentedRoadView(CameraView, AugmentedRoadViewSP):
 
     # Custom UI extension point - add custom overlays here
     # Use self._content_rect for positioning within camera bounds
+    if gui_app.sunnypilot_ui():
+      offroad_toggle.draw_onroad_button(offroad_toggle.onroad_button_rect(self._content_rect))
 
     # End clipping region
     rl.end_scissor_mode()
@@ -103,7 +106,10 @@ class AugmentedRoadView(CameraView, AugmentedRoadViewSP):
     # Draw colored border based on driving state
     self._draw_border(rect)
 
-  def _handle_mouse_press(self, _):
+  def _handle_mouse_press(self, mouse_pos):
+    if gui_app.sunnypilot_ui() and rl.check_collision_point_rec(mouse_pos, offroad_toggle.onroad_button_rect(self._content_rect)):
+      offroad_toggle.set_always_offroad(True)
+      return
     if self._click_callback is not None:
       self._click_callback()
 
